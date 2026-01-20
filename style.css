@@ -1,4 +1,4 @@
-/* Base Reset & Variables */
+/* --- Orbify Player Global Styles --- */
 :root {
     --bg-color: #0f0f0f;
     --card-bg: #1e1e1e;
@@ -8,7 +8,7 @@
     --border-color: #333;
 }
 
-/* লক সমস্যা সমাধানের জন্য overflow সংশোধন */
+/* লক সমস্যা সমাধান এবং স্ক্রলিং */
 html, body {
     margin: 0;
     padding: 0;
@@ -17,61 +17,60 @@ html, body {
     background: var(--bg-color);
     color: var(--text-main);
     font-family: 'Roboto', Arial, sans-serif;
-    overflow-x: hidden; /* ডানে-বামে স্ক্রল বন্ধ */
-    overflow-y: auto;   /* উপর-নিচে স্ক্রল সচল */
+    overflow: hidden; /* মেইন বডি ফিক্সড থাকবে */
 }
 
-/* Main Content Layout */
 .main-content {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
 }
 
-/* Player Container */
+/* প্লেয়ার সেকশন */
 .player-container {
     background: #000;
     width: 100%;
-    position: sticky; /* ভিডিওটি উপরে আটকে থাকবে */
-    top: 0;
-    z-index: 100;
     aspect-ratio: 16 / 9;
+    flex-shrink: 0;
 }
 
-.video-container {
-    width: 100%;
-    height: 100%;
-}
-
-/* Channel Section */
+/* চ্যানেল সেকশন লেআউট */
 .channel-section {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--bg-color);
+    overflow: hidden; /* ইন্টারনাল স্ক্রলিং হবে */
 }
 
-/* Tabs */
+/* বাটন পজিশন ফিক্স (ট্যাবস) */
 .channel-tabs {
     display: flex;
-    overflow-x: auto; /* মোবাইলে ট্যাব স্ক্রল করা যাবে */
+    overflow-x: auto;
+    white-space: nowrap;
     background: #181818;
     border-bottom: 1px solid var(--border-color);
-    padding: 5px;
-    gap: 5px;
-    position: sticky;
-    top: 0; /* মোবাইল স্ক্রল করলে এটি প্লেয়ারের নিচে থাকবে */
+    padding: 10px 5px;
+    gap: 8px;
+    scrollbar-width: none; /* Firefox এর জন্য */
+}
+
+.channel-tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari এর জন্য স্ক্রলবার হাইড */
 }
 
 .tab-btn {
     flex: 0 0 auto;
-    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
     border: none;
     background: #2a2a2a;
     color: var(--text-dim);
     cursor: pointer;
     border-radius: 20px;
     font-size: 13px;
+    transition: 0.2s;
 }
 
 .tab-btn.active {
@@ -80,48 +79,56 @@ html, body {
     font-weight: bold;
 }
 
-/* Search */
+/* সার্চ বার পজিশন ফিক্স */
 .search-container {
-    padding: 10px;
+    padding: 12px;
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .search-input {
     width: 100%;
-    padding: 12px;
+    height: 42px;
     background: #252525;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: white;
+    padding: 0 15px;
+    font-size: 14px;
     outline: none;
+    box-sizing: border-box;
 }
 
-/* Channel Grid */
+.search-input:focus {
+    border-color: var(--accent);
+}
+
+/* চ্যানেল লিস্ট/গ্রিড */
 .channel-grid {
+    flex: 1;
+    overflow-y: auto; /* শুধু এখানে স্ক্রল হবে */
     padding: 10px;
-    display: grid;
-    grid-template-columns: 1fr; /* ডিফল্ট ১টি কলাম */
-    gap: 10px;
 }
 
-/* Channel Card */
+/* কার্ড স্টাইল */
 .channel-card {
     display: flex;
     align-items: center;
     padding: 10px;
     background: var(--card-bg);
-    border-radius: 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: 0.2s;
+    border: 1px solid transparent;
 }
 
 .channel-card:active {
-    transform: scale(0.98);
     background: #333;
 }
 
 .channel-image {
-    width: 60px;
-    height: 45px;
+    width: 55px;
+    height: 40px;
     margin-right: 15px;
     flex-shrink: 0;
 }
@@ -129,8 +136,8 @@ html, body {
 .channel-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 6px;
+    object-fit: contain;
+    border-radius: 4px;
 }
 
 .channel-info {
@@ -139,7 +146,7 @@ html, body {
 }
 
 .channel-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -147,16 +154,27 @@ html, body {
 }
 
 .channel-category {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-dim);
 }
 
-/* Desktop Version */
+/* ফেভারিট বাটন */
+.favorite-btn {
+    background: none;
+    border: none;
+    color: #444;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.favorite-btn.active {
+    color: #ff4b4b;
+}
+
+/* ডেস্কটপ ভিউ */
 @media (min-width: 992px) {
     .main-content {
         flex-direction: row;
-        height: 100vh;
-        overflow: hidden;
     }
     .player-container {
         flex: 2;
@@ -166,68 +184,19 @@ html, body {
     .channel-section {
         flex: 1;
         height: 100vh;
-        overflow-y: auto;
         border-left: 1px solid var(--border-color);
     }
-    .channel-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
-/* Loading */
+/* Loading Animation */
 .loading {
-    text-align: center;
-    padding: 50px;
-    color: var(--accent);
-}
-.channel-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 4px;
-}
-
-.channel-info .channel-name {
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 3px;
-}
-
-.channel-info .channel-category {
-    font-size: 12px;
-    color: var(--text-dim);
-}
-
-/* Favorites Button */
-.favorite-btn {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: #444;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.favorite-btn.active {
-    color: #ff4757;
-}
-
-/* Responsive */
-@media (min-width: 769px) {
-    .main-content { flex-direction: row; }
-    .player-container { flex: 2; height: 100vh; }
-    .channel-section { flex: 1; height: 100vh; border-left: 1px solid var(--border-color); }
-}
-
-/* Loading Spinner */
-.loading {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--accent);
+    border: 3px solid #333;
+    border-top: 3px solid var(--accent);
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 25px;
+    height: 25px;
     animation: spin 1s linear infinite;
-    margin: 20px auto;
+    margin: 30px auto;
 }
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
