@@ -41,10 +41,6 @@
         <div class='channel-grid' id='channelGrid'>
             <div class='loading'></div>
         </div>
-
-        <div class="footer">
-            &copy; 2026 <span>Best IPTV</span> | Premium Entertainment
-        </div>
     </div>
 </div>
 
@@ -53,8 +49,8 @@ let videoPlayer;
 let channels = [];
 let categories = new Set();
 let favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
+let currentPlayingUrl = ""; // বর্তমানে কোন URL প্লে হচ্ছে তা রাখার জন্য
 
-// ১. URL থেকে প্যারামিটার নেওয়া
 function getParam(sname) {
     let params = new URLSearchParams(window.location.search);
     return params.get(sname);
@@ -64,7 +60,6 @@ let sv = getParam("sv") || "";
 const channelGrid = document.getElementById('channelGrid');
 const searchInput = document.getElementById('searchInput');
 
-// ২. প্লেয়ার সেটআপ
 document.addEventListener('DOMContentLoaded', () => {
     videoPlayer = videojs('my-video', {
         fluid: true,
@@ -72,32 +67,33 @@ document.addEventListener('DOMContentLoaded', () => {
         liveui: true
     });
 
-    videoPlayer.on('fullscreenchange', function() {
-        if (videoPlayer.isFullscreen()) {
-            if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock('landscape').catch(err => {});
-            }
-        }
-    });
-
     if(sv) parseM3U(sv);
 });
 
-// ৩. অটো-প্লে সহ চ্যানেল প্লে ফাংশন
-function playChannel(url) {
+// ৩. অটো-প্লে এবং একটিভ চ্যানেল হাইলাইট ফাংশন
+function playChannel(url, element) {
+    currentPlayingUrl = url;
+    
+    // সব কার্ড থেকে একটিভ ক্লাস রিমুভ করা
+    document.querySelectorAll('.channel-card').forEach(card => {
+        card.classList.remove('active-channel');
+    });
+
+    // ক্লিক করা কার্ডে একটিভ ক্লাস যোগ করা (যদি এলিমেন্ট সরাসরি পাস হয়)
+    if(element) {
+        element.classList.add('active-channel');
+    }
+
     videoPlayer.src({
         src: url,
         type: url.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
     });
     
     videoPlayer.ready(function() {
-        // ব্রাউজার পলিসি অনুযায়ী প্রথমে সাউন্ডসহ প্লে করার চেষ্টা
-        videoPlayer.muted(false); 
+        videoPlayer.muted(false);
         let playPromise = videoPlayer.play();
-        
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                // সাউন্ডসহ প্লে না হলে মিউট করে অটো-প্লে করবে
                 videoPlayer.muted(true);
                 videoPlayer.play();
             });
@@ -106,7 +102,6 @@ function playChannel(url) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ৪. M3U ফাইল পার্সিং
 async function parseM3U(url) {
     try {
         channelGrid.innerHTML = '<div class="loading"></div>';
@@ -137,21 +132,23 @@ async function parseM3U(url) {
         });
         showAllChannels();
     } catch (error) {
-        channelGrid.innerHTML = '<div class="error-message" style="text-align:center; padding:20px;">Error loading channels. Check URL or Proxy.</div>';
+        channelGrid.innerHTML = '<div class="error-message" style="text-align:center; padding:20px;">Error loading channels.</div>';
     }
 }
 
-// ৫. ডিসপ্লে লজিক
 function createChannelCard(channel) {
     const isFavorite = favorites.has(channel.url);
+    const isActive = channel.url === currentPlayingUrl ? 'active-channel' : '';
+    
     return `
-        <div class="channel-card" onclick="playChannel('${channel.url}')">
+        <div class="channel-card ${isActive}" onclick="playChannel('${channel.url}', this)">
             <div class="channel-image">
                 <img src="${channel.logo}" alt="${channel.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/50x50?text=TV'">
             </div>
             <div class="channel-info">
                 <div class="channel-name">${channel.title}</div>
                 <div class="channel-category">${channel.category}</div>
+                <div class="playing-indicator"><i class="fas fa-play"></i> Playing now...</div>
             </div>
             <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
                     onclick="toggleFavorite(event, '${channel.url}')">
@@ -183,7 +180,7 @@ function showChannelsByCategory(cat) {
 
 function showFavorites() {
     const favs = channels.filter(ch => favorites.has(ch.url));
-    channelGrid.innerHTML = favs.length > 0 ? favs.map(ch => createChannelCard(ch)).join('') : '<div style="text-align:center; color:#888; margin-top:20px;">No favorites added</div>';
+    channelGrid.innerHTML = favs.length > 0 ? favs.map(ch => createChannelCard(ch)).join('') : '<div style="text-align:center; padding:20px;">No favorites</div>';
 }
 
 function toggleFavorite(event, url) {
