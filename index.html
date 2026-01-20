@@ -94,7 +94,7 @@ function playChannel(url) {
     });
     
     videoPlayer.ready(function() {
-        videoPlayer.muted(true); // অটো-প্লে গ্যারান্টি দিতে
+        videoPlayer.muted(false); // অটো-প্লে গ্যারান্টি দিতে
         let playPromise = videoPlayer.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
