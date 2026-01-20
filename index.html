@@ -4,17 +4,24 @@
     <meta charset='UTF-8'/>
     <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' name='viewport'/>
     <title>Orbify M3U Player</title>
+    
     <link href='//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' rel='stylesheet'/>
-    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clappr-hlsjs-playback@latest/dist/clappr-hlsjs-playback.min.js"></script>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <link href='style.css' rel='stylesheet'/>
+    
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 </head>
 <body>
 
 <div class='main-content'>
     <div class='player-container'>
-        <div class='video-container' id='videoPlayer'></div>
+        <div class="video-container">
+            <video id="my-video" class="video-js vjs-big-play-centered vjs-16-9" controls preload="auto" width="100%" poster="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEji3C6D6HZt-fLDTf1mYZQYIyeUP_VV8UT9jQS-pbEiJu2KVxUL3xdAqnXaKyO_kIICCWn-IWyuq0XevFLIGAqLmSFpdpZzfJKVOrgkmsB9rdoYmgto2wZRJuqHAkIhj9bS7rcVKen3LMLxwWa1ZD1E605gASpoo-wl628yDS0zyNvB3KxC1BfX4oEL/s1920/skviptv.png">
+                <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video</p>
+            </video>
+        </div>
     </div>
+    
     <div class='channel-section'>
         <div class='channel-tabs'>
             <button class='tab-btn active' id='allChannelsTab'><i class='fas fa-globe'></i> All</button>
@@ -31,6 +38,17 @@
 </div>
 
 <script>
+let videoPlayer;
+// প্লেয়ার ইনিশিয়ালাইজেশন
+document.addEventListener('DOMContentLoaded', () => {
+    videoPlayer = videojs('my-video', {
+        fluid: true,
+        autoplay: true,
+        liveui: true
+    });
+    if(sv) parseM3U(sv);
+});
+
 function getParam(sname) {
     let params = new URLSearchParams(window.location.search);
     return params.get(sname);
@@ -40,43 +58,18 @@ let sv = getParam("sv") || "";
 let channels = [];
 let categories = new Set();
 let favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
-let player;
 
 const channelGrid = document.getElementById('channelGrid');
 const searchInput = document.getElementById('searchInput');
 
-function createChannelCard(channel) {
-    const isFavorite = favorites.has(channel.url);
-    return `
-        <div class="channel-card" onclick="playChannel('${channel.url}')">
-            <div class="channel-image">
-                <img src="${channel.logo}" alt="${channel.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180'">
-            </div>
-            <div class="channel-info">
-                <div class="channel-name">${channel.title}</div>
-                <div class="channel-category">${channel.category}</div>
-            </div>
-            <div class="action-buttons">
-                <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
-                        onclick="toggleFavorite(event, '${channel.url}')">
-                    <i class="fas fa-heart"></i>
-                </button>
-            </div>
-        </div>`;
-}
-
+// চ্যানেল প্লে করার ফাংশন (Video.js এর জন্য আপডেট করা)
 function playChannel(url) {
-    if (player) { player.destroy(); }
-    player = new Clappr.Player({
-        source: url,
-        parentId: '#videoPlayer',
-        width: '100%',
-        height: '100%',
-        autoPlay: true,
-        plugins: [HlsjsPlayback],
-        playback: { hlsjsConfig: { enableWorker: true } },
-        poster: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEji3C6D6HZt-fLDTf1mYZQYIyeUP_VV8UT9jQS-pbEiJu2KVxUL3xdAqnXaKyO_kIICCWn-IWyuq0XevFLIGAqLmSFpdpZzfJKVOrgkmsB9rdoYmgto2wZRJuqHAkIhj9bS7rcVKen3LMLxwWa1ZD1E605gASpoo-wl628yDS0zyNvB3KxC1BfX4oEL/s1920/skviptv.png",
+    videoPlayer.src({
+        src: url,
+        type: url.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
     });
+    videoPlayer.play();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function parseM3U(url) {
@@ -115,6 +108,26 @@ async function parseM3U(url) {
     } catch (error) {
         channelGrid.innerHTML = '<div class="error-message">Error loading channels.</div>';
     }
+}
+
+function createChannelCard(channel) {
+    const isFavorite = favorites.has(channel.url);
+    return `
+        <div class="channel-card" onclick="playChannel('${channel.url}')">
+            <div class="channel-image">
+                <img src="${channel.logo}" alt="${channel.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180'">
+            </div>
+            <div class="channel-info">
+                <div class="channel-name">${channel.title}</div>
+                <div class="channel-category">${channel.category}</div>
+            </div>
+            <div class="action-buttons">
+                <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
+                        onclick="toggleFavorite(event, '${channel.url}')">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+        </div>`;
 }
 
 function showAllChannels() {
@@ -164,10 +177,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         if(btn.id === 'categoriesTab') showCategories();
         if(btn.id === 'favoritesTab') showFavorites();
     });
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    if(sv) parseM3U(sv);
 });
 </script>
 </body>
