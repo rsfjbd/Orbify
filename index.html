@@ -3,7 +3,7 @@
 <head>
     <meta charset='UTF-8'/>
     <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' name='viewport'/>
-    <title>Orbify M3U Player - Final</title>
+    <title>Best IPTV - Live Player</title>
     
     <link href='//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' rel='stylesheet'/>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -21,7 +21,6 @@
                    controls 
                    preload="auto" 
                    width="100%" 
-                   muted 
                    playsinline
                    poster="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEji3C6D6HZt-fLDTf1mYZQYIyeUP_VV8UT9jQS-pbEiJu2KVxUL3xdAqnXaKyO_kIICCWn-IWyuq0XevFLIGAqLmSFpdpZzfJKVOrgkmsB9rdoYmgto2wZRJuqHAkIhj9bS7rcVKen3LMLxwWa1ZD1E605gASpoo-wl628yDS0zyNvB3KxC1BfX4oEL/s1920/skviptv.png">
             </video>
@@ -42,6 +41,10 @@
         <div class='channel-grid' id='channelGrid'>
             <div class='loading'></div>
         </div>
+
+        <div class="footer">
+            &copy; 2026 <span>Best IPTV</span> | Premium Entertainment
+        </div>
     </div>
 </div>
 
@@ -61,24 +64,18 @@ let sv = getParam("sv") || "";
 const channelGrid = document.getElementById('channelGrid');
 const searchInput = document.getElementById('searchInput');
 
-// ২. প্লেয়ার সেটআপ এবং অটো-রোটেট
+// ২. প্লেয়ার সেটআপ
 document.addEventListener('DOMContentLoaded', () => {
     videoPlayer = videojs('my-video', {
         fluid: true,
         autoplay: true,
-        muted: true, // অটো-প্লে নিশ্চিত করতে মিউট রাখা হয়েছে
         liveui: true
     });
 
-    // ফুলস্ক্রিন রোটেট লজিক
     videoPlayer.on('fullscreenchange', function() {
         if (videoPlayer.isFullscreen()) {
             if (screen.orientation && screen.orientation.lock) {
                 screen.orientation.lock('landscape').catch(err => {});
-            }
-        } else {
-            if (screen.orientation && screen.orientation.unlock) {
-                screen.orientation.unlock();
             }
         }
     });
@@ -94,11 +91,15 @@ function playChannel(url) {
     });
     
     videoPlayer.ready(function() {
-        videoPlayer.muted(true); // অটো-প্লে গ্যারান্টি দিতে
+        // ব্রাউজার পলিসি অনুযায়ী প্রথমে সাউন্ডসহ প্লে করার চেষ্টা
+        videoPlayer.muted(false); 
         let playPromise = videoPlayer.play();
+        
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                console.log("Autoplay blocked, user must click play.");
+                // সাউন্ডসহ প্লে না হলে মিউট করে অটো-প্লে করবে
+                videoPlayer.muted(true);
+                videoPlayer.play();
             });
         }
     });
@@ -136,7 +137,7 @@ async function parseM3U(url) {
         });
         showAllChannels();
     } catch (error) {
-        channelGrid.innerHTML = '<div class="error-message">Error loading channels.</div>';
+        channelGrid.innerHTML = '<div class="error-message" style="text-align:center; padding:20px;">Error loading channels. Check URL or Proxy.</div>';
     }
 }
 
@@ -146,18 +147,16 @@ function createChannelCard(channel) {
     return `
         <div class="channel-card" onclick="playChannel('${channel.url}')">
             <div class="channel-image">
-                <img src="${channel.logo}" alt="${channel.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180'">
+                <img src="${channel.logo}" alt="${channel.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/50x50?text=TV'">
             </div>
             <div class="channel-info">
                 <div class="channel-name">${channel.title}</div>
                 <div class="channel-category">${channel.category}</div>
             </div>
-            <div class="action-buttons">
-                <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
-                        onclick="toggleFavorite(event, '${channel.url}')">
-                    <i class="fas fa-heart"></i>
-                </button>
-            </div>
+            <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
+                    onclick="toggleFavorite(event, '${channel.url}')">
+                <i class="fas fa-heart"></i>
+            </button>
         </div>`;
 }
 
@@ -184,7 +183,7 @@ function showChannelsByCategory(cat) {
 
 function showFavorites() {
     const favs = channels.filter(ch => favorites.has(ch.url));
-    channelGrid.innerHTML = favs.length > 0 ? favs.map(ch => createChannelCard(ch)).join('') : '<div class="error-message">No favorites added</div>';
+    channelGrid.innerHTML = favs.length > 0 ? favs.map(ch => createChannelCard(ch)).join('') : '<div style="text-align:center; color:#888; margin-top:20px;">No favorites added</div>';
 }
 
 function toggleFavorite(event, url) {
@@ -192,7 +191,7 @@ function toggleFavorite(event, url) {
     favorites.has(url) ? favorites.delete(url) : favorites.add(url);
     localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)));
     if(document.querySelector('.tab-btn.active').id === 'favoritesTab') showFavorites();
-    else event.target.closest('.favorite-btn').classList.toggle('active');
+    else event.currentTarget.classList.toggle('active');
 }
 
 searchInput.addEventListener('input', (e) => {
