@@ -44,10 +44,9 @@ html, body {
     overflow: hidden;
 }
 
-/* ট্যাব বাটন সেন্টার ফিক্স */
 .channel-tabs {
     display: flex;
-    justify-content: center; /* ডেস্কটপে সেন্টার */
+    justify-content: center;
     align-items: center;
     background: #181818;
     border-bottom: 1px solid var(--border-color);
@@ -59,13 +58,6 @@ html, body {
 }
 
 .channel-tabs::-webkit-scrollbar { display: none; }
-
-@media (max-width: 600px) {
-    .channel-tabs {
-        justify-content: space-around; /* মোবাইলে সুন্দর দূরত্বে থাকবে */
-        padding: 10px 5px;
-    }
-}
 
 .tab-btn {
     flex: 0 0 auto;
@@ -89,10 +81,7 @@ html, body {
 }
 
 /* Search Bar */
-.search-container {
-    padding: 12px;
-}
-
+.search-container { padding: 12px; }
 .search-input {
     width: 100%;
     height: 42px;
@@ -104,16 +93,17 @@ html, body {
     font-size: 14px;
     outline: none;
     box-sizing: border-box;
+    transition: 0.3s;
 }
+.search-input:focus { border-color: var(--accent); }
 
-/* Channel Grid */
+/* Channel Grid & Cards */
 .channel-grid {
     flex: 1;
     overflow-y: auto;
     padding: 10px;
 }
 
-/* ফেভারিট বাটন ডান দিকে ফিক্স */
 .channel-card {
     display: flex;
     align-items: center;
@@ -122,9 +112,18 @@ html, body {
     margin-bottom: 10px;
     border-radius: 12px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    animation: fadeIn 0.4s ease-out;
 }
 
-.channel-card:active { transform: scale(0.98); }
+/* হোভার ইফেক্ট */
+.channel-card:hover {
+    transform: translateY(-3px);
+    background: #2a2a2a;
+    border-color: var(--accent);
+    box-shadow: 0 5px 15px rgba(62, 166, 255, 0.1);
+}
 
 .channel-image {
     width: 50px;
@@ -137,13 +136,10 @@ html, body {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    border-radius: 5px;
 }
 
-.channel-info {
-    flex: 1; /* তথ্যকে মাঝখানের জায়গা নিতে বাধ্য করে */
-    min-width: 0;
-}
-
+.channel-info { flex: 1; min-width: 0; }
 .channel-name {
     font-size: 14px;
     font-weight: 500;
@@ -151,11 +147,7 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-.channel-category {
-    font-size: 12px;
-    color: var(--text-dim);
-}
+.channel-category { font-size: 12px; color: var(--text-dim); }
 
 .favorite-btn {
     background: none;
@@ -163,12 +155,21 @@ html, body {
     color: #444;
     font-size: 20px;
     padding: 5px 10px;
-    margin-left: auto; /* একদম ডানে পাঠিয়ে দিবে */
+    margin-left: auto;
     cursor: pointer;
-    flex-shrink: 0;
 }
-
 .favorite-btn.active { color: #ff4b4b; }
+
+/* Footer */
+.footer {
+    background: #181818;
+    padding: 12px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--text-dim);
+}
+.footer span { color: var(--accent); font-weight: bold; }
 
 /* Desktop View */
 @media (min-width: 992px) {
@@ -177,7 +178,12 @@ html, body {
     .channel-section { flex: 1; height: 100vh; border-left: 1px solid var(--border-color); }
 }
 
-/* Loading Spinner */
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .loading {
     border: 3px solid #333;
     border-top: 3px solid var(--accent);
@@ -187,5 +193,4 @@ html, body {
     animation: spin 1s linear infinite;
     margin: 40px auto;
 }
-
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
