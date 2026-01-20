@@ -1,57 +1,96 @@
 <!DOCTYPE html>
-<html dir='ltr' lang='en-GB'>
+<html dir='ltr' lang='en-GB' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
 <head>
-    <meta charset='UTF-8'/>
-    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' name='viewport'/>
-    <title>Orbify M3U Player</title>
-    <link href='//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' rel='stylesheet'/>
-    
-    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clappr-hlsjs-playback@latest/dist/clappr-hlsjs-playback.min.js"></script>
-    
-    <link href='style.css' rel='stylesheet'/>
+<meta charset='UTF-8'/>
+<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' name='viewport'/>
+<title>Orbify M3U Player</title>
+<meta content='text/html; charset=UTF-8' http-equiv='Content-Type'/>
+<!-- Chrome, Firefox OS and Opera -->
+<!-- Windows Phone -->
+<meta content='' name='msapplication-navbutton-color'/>
+
+<!--Can't find substitution for tag [blog.ieCssRetrofitLinks]-->
+<meta content='Orbify Live' property='og:title'/>
+<meta content='Live | Streaming Online' property='og:description'/>
+<!-- Required Meta Tags -->
+<meta content='text/html; charset=UTF-8' http-equiv='Content-Type'/>
+<meta content='Orbify Live' property='og:site_name'/>
+<!-- Favicon -->
+<link href='favicon.io' rel='icon' type='image/png'/>
+<!-- External Resources -->
+<link href='//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' rel='stylesheet'/>
+<script src='//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js'></script>
+<link href='style.css' rel='stylesheet'/>
+            
 </head>
 <body>
-
+<!-- Main Content -->
 <div class='main-content'>
-    <div class='player-container'>
-        <div class='video-container' id='videoPlayer'></div>
-    </div>
-    <div class='channel-section'>
-        <div class='channel-tabs'>
-            <button class='tab-btn active' id='allChannelsTab'><i class='fas fa-globe'></i> All</button>
-            <button class='tab-btn' id='categoriesTab'><i class='fas fa-list'></i> Categories</button>
-            <button class='tab-btn' id='favoritesTab'><i class='fas fa-heart'></i> Favorites</button>
-            <button class='tab-btn' id='serverChangeTab'><i class='fas fa-rotate'></i> Server <span id='currentServerDisplay'>1</span></button>
-        </div>
-        <div class='search-container'>
-            <input class='search-input' id='searchInput' placeholder='Search channels...' type='text'/>
-        </div>
-        <div class='channel-grid' id='channelGrid'>
-            <div class='loading'></div>
-        </div>
-    </div>
+<div class='player-container'>
+<div class='video-container' id='videoPlayer'></div>
+</div>
+<div class='channel-section'>
+<div class='channel-tabs'>
+<button class='tab-btn active' id='allChannelsTab'>
+<i class='fas fa-globe'></i> All
+            </button>
+<button class='tab-btn' id='categoriesTab'>
+<i class='fas fa-list'></i> Categories
+            </button>
+<button class='tab-btn' id='favoritesTab'>
+<i class='fas fa-heart'></i> Favorites
+            </button>
+<button class='tab-btn' id='serverChangeTab'>
+<i class='fas fa-rotate'></i> Server <span id='currentServerDisplay'>1</span>
+</button>
+</div>
+<div class='search-container'>
+<input class='search-input' id='searchInput' placeholder='Search channels...' type='text'/>
+</div>
+<div class='channel-grid' id='channelGrid'>
+<div class='loading'></div>
+</div>
+</div>
 </div>
 
-<script>
-// ১. URL থেকে 'sv' প্যারামিটার নেওয়া
-function getParam(sname) {
-    let params = new URLSearchParams(window.location.search);
-    return params.get(sname);
-}
+<!-- JavaScript -->
 
-let sv = getParam("sv") || "";
-let currentServer = sv;
-const servers = [sv];
+
+<script>
+function getParam ( sname )
+{
+  var params = location.search.substr(location.search.indexOf("?")+1);
+  var sval =  params.replace("sv=", "");
+  
+  return sval;
+}
+var sv = getParam("sv");
+
+</script>
+<script>
+  var responseText = ''+sv+'';
+  urlArry = responseText.split(',');
+  start = true;
+  num_of_urlArry = urlArry.length;
+  index_of_urlArry = 0;
+</script>
+
+<script type='text/javascript'>//<![CDATA[
+let player;
+const channelGrid = document.getElementById('channelGrid');
+const currentServerDisplay = document.getElementById('currentServerDisplay');
+const searchInput = document.getElementById('searchInput');
+
+let currentServer = ''+sv+'';
+
+const servers = [
+  ''+sv+'',
+];
+
 let channels = [];
 let categories = new Set();
 let favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
-let player;
-
-const channelGrid = document.getElementById('channelGrid');
-const searchInput = document.getElementById('searchInput');
-
-// ২. চ্যানেল কার্ড তৈরি
+// Channel Card Creation
 function createChannelCard(channel) {
     const isFavorite = favorites.has(channel.url);
     return `
@@ -69,35 +108,45 @@ function createChannelCard(channel) {
                     <i class="fas fa-heart"></i>
                 </button>
             </div>
-        </div>`;
+        </div>
+    `;
 }
 
-// ৩. ভিডিও প্লেয়ার ফাংশন (HLS সাপোর্ট সহ)
+// Player Functions
 function playChannel(url) {
-    if (player) { player.destroy(); }
+    if (player) {
+        player.destroy();
+    }
     player = new Clappr.Player({
         source: url,
         parentId: '#videoPlayer',
         width: '100%',
         height: '100%',
         autoPlay: true,
-        plugins: [HlsjsPlayback],
-        playback: { hlsjsConfig: { enableWorker: true } },
-        poster: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEji3C6D6HZt-fLDTf1mYZQYIyeUP_VV8UT9jQS-pbEiJu2KVxUL3xdAqnXaKyO_kIICCWn-IWyuq0XevFLIGAqLmSFpdpZzfJKVOrgkmsB9rdoYmgto2wZRJuqHAkIhj9bS7rcVKen3LMLxwWa1ZD1E605gASpoo-wl628yDS0zyNvB3KxC1BfX4oEL/s1920/skviptv.png",
+poster: "//blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEji3C6D6HZt-fLDTf1mYZQYIyeUP_VV8UT9jQS-pbEiJu2KVxUL3xdAqnXaKyO_kIICCWn-IWyuq0XevFLIGAqLmSFpdpZzfJKVOrgkmsB9rdoYmgto2wZRJuqHAkIhj9bS7rcVKen3LMLxwWa1ZD1E605gASpoo-wl628yDS0zyNvB3KxC1BfX4oEL/s1920/skviptv.png",
+        mute: false,
+        playback: {
+            playInline: true,
+        }
     });
+
+    if (window.matchMedia("(max-width: 768px)").matches) {
+        const videoContainer = document.querySelector('.video-container');
+        videoContainer.addEventListener('click', () => {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                videoContainer.requestFullscreen();
+            }
+        });
+    }
 }
 
-// ৪. M3U ফাইল পার্স করা (উন্নত প্রক্সি সহ)
+// M3U Parser
 async function parseM3U(url) {
-    if(!url) {
-        channelGrid.innerHTML = '<div class="error-message">No M3U URL provided in ?sv=</div>';
-        return;
-    }
-    
     try {
         channelGrid.innerHTML = '<div class="loading"></div>';
-        // GitHub এবং অন্যান্য সার্ভারের জন্য ভালো প্রক্সি
-        const proxyUrl = 'https://corsproxy.io/?'; 
+        const proxyUrl = 'https://api.allorigins.win/raw?url=';
         const response = await fetch(proxyUrl + encodeURIComponent(url));
         
         if (!response.ok) throw new Error('Network response was not ok');
@@ -107,89 +156,139 @@ async function parseM3U(url) {
         
         channels = [];
         categories.clear();
+        
         let currentChannel = {};
         
         lines.forEach(line => {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
+                const info = line.split(',')[1];
                 const categoryMatch = line.match(/group-title="([^"]+)"/);
                 const category = categoryMatch ? categoryMatch[1] : 'Others';
                 const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-                const logo = logoMatch ? logoMatch[1] : '';
-                const title = line.split(',')[1] || "Unknown Channel";
+                const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/320x180';
                 
-                currentChannel = { title: title, category: category, logo: logo };
+                currentChannel = {
+                    title: info,
+                    category: category,
+                    logo: logo
+                };
                 categories.add(category);
             } else if (line.startsWith('http')) {
                 currentChannel.url = line;
-                if(currentChannel.title) channels.push(currentChannel);
+                channels.push(currentChannel);
                 currentChannel = {};
             }
         });
         
         showAllChannels();
     } catch (error) {
-        console.error('Error:', error);
-        channelGrid.innerHTML = '<div class="error-message">Error loading channels. Check your link or proxy.</div>';
+        console.error('Error loading M3U:', error);
+        channelGrid.innerHTML = '<div class="error-message">Error loading channels. Please try again later.</div>';
     }
 }
 
-// ৫. ডিসপ্লে এবং ফিল্টার ফাংশন
+// Channel Display Functions
 function showAllChannels() {
-    channelGrid.innerHTML = channels.map(ch => createChannelCard(ch)).join('');
+    channelGrid.innerHTML = channels.map(channel => createChannelCard(channel)).join('');
 }
 
 function showCategories() {
-    channelGrid.innerHTML = Array.from(categories).sort().map(cat => {
-        const count = channels.filter(ch => ch.category === cat).length;
-        return `<div class="channel-card" onclick="showChannelsByCategory('${cat}')">
+    channelGrid.innerHTML = Array.from(categories)
+        .sort()
+        .map(category => {
+            const count = channels.filter(ch => ch.category === category).length;
+            return `
+                <div class="channel-card" onclick="showChannelsByCategory('${category}')">
                     <div class="channel-info">
-                        <div class="channel-name">${cat}</div>
+                        <div class="channel-name">${category}</div>
                         <div class="channel-category">${count} Channels</div>
                     </div>
-                </div>`;
-    }).join('');
+                </div>
+            `;
+        }).join('');
 }
 
-function showChannelsByCategory(cat) {
-    const filtered = channels.filter(ch => ch.category === cat);
-    channelGrid.innerHTML = filtered.map(ch => createChannelCard(ch)).join('');
+function showChannelsByCategory(category) {
+    const filteredChannels = channels.filter(ch => ch.category === category);
+    channelGrid.innerHTML = filteredChannels.map(channel => createChannelCard(channel)).join('');
 }
 
 function showFavorites() {
-    const favs = channels.filter(ch => favorites.has(ch.url));
-    channelGrid.innerHTML = favs.length > 0 ? favs.map(ch => createChannelCard(ch)).join('') : '<div class="error-message">No favorites added</div>';
+    const favoriteChannels = channels.filter(ch => favorites.has(ch.url));
+    channelGrid.innerHTML = favoriteChannels.length > 0 
+        ? favoriteChannels.map(channel => createChannelCard(channel)).join('')
+        : '<div class="error-message">No favorite channels yet</div>';
 }
 
+// Favorite Toggle Function
 function toggleFavorite(event, url) {
-    event.preventDefault(); event.stopPropagation();
-    favorites.has(url) ? favorites.delete(url) : favorites.add(url);
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (favorites.has(url)) {
+        favorites.delete(url);
+    } else {
+        favorites.add(url);
+    }
+    
     localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)));
-    document.querySelector('.tab-btn.active').id === 'favoritesTab' ? showFavorites() : event.target.closest('.favorite-btn').classList.toggle('active');
+    
+    const currentTab = document.querySelector('.tab-btn.active');
+    if (currentTab.id === 'favoritesTab') {
+        showFavorites();
+    } else {
+        const btn = event.target.closest('.favorite-btn');
+        btn.classList.toggle('active');
+    }
 }
 
-// ৬. ইভেন্ট লিসেনার
+// Search Function
 searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = channels.filter(ch => ch.title.toLowerCase().includes(term) || ch.category.toLowerCase().includes(term));
-    channelGrid.innerHTML = filtered.map(ch => createChannelCard(ch)).join('');
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredChannels = channels.filter(channel => 
+        channel.title.toLowerCase().includes(searchTerm) ||
+        channel.category.toLowerCase().includes(searchTerm)
+    );
+    
+    channelGrid.innerHTML = filteredChannels.map(channel => createChannelCard(channel)).join('');
 });
 
+// Server Change Function
+document.getElementById('serverChangeTab').onclick = function() {
+    const currentServerIndex = servers.indexOf(currentServer);
+    const nextServerIndex = (currentServerIndex + 1) % servers.length;
+    currentServer = servers[nextServerIndex];
+    currentServerDisplay.textContent = nextServerIndex + 1;
+    parseM3U(currentServer);
+};
+
+// Tab Switch Function
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        if(btn.id === 'serverChangeTab') return;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if(btn.id === 'allChannelsTab') showAllChannels();
-        if(btn.id === 'categoriesTab') showCategories();
-        if(btn.id === 'favoritesTab') showFavorites();
+        
+        switch(btn.id) {
+            case 'allChannelsTab':
+                showAllChannels();
+                break;
+            case 'categoriesTab':
+                showCategories();
+                break;
+            case 'favoritesTab':
+                showFavorites();
+                break;
+        }
     });
 });
 
-// ইনিশিয়ালাইজেশন
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    if(currentServer) parseM3U(currentServer);
+    parseM3U(servers[0]);
 });
+//]]>
 </script>
+<!--script src='copy.js'></script-->
 </body>
 </html>
