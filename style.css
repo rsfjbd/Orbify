@@ -41,10 +41,10 @@ html, body {
     overflow: hidden;
 }
 
-/* বাটন পজিশন সেন্টার ফিক্স */
+/* ১. ট্যাব বাটন সেন্টার করার ফিক্স */
 .channel-tabs {
     display: flex;
-    justify-content: center; /* ডেস্কটপে সেন্টার করবে */
+    justify-content: center; /* ডেস্কটপ এবং বড় স্ক্রিনে সেন্টার থাকবে */
     align-items: center;
     background: #181818;
     border-bottom: 1px solid var(--border-color);
@@ -57,10 +57,11 @@ html, body {
 
 .channel-tabs::-webkit-scrollbar { display: none; }
 
-@media (max-width: 600px) {
+/* মোবাইলে বাটনগুলো যাতে ভেঙে না যায় */
+@media (max-width: 480px) {
     .channel-tabs {
-        justify-content: flex-start; /* মোবাইলে বাম থেকে স্ক্রল হবে */
-        padding: 10px 15px;
+        justify-content: space-around; /* ছোট মোবাইলে সমান দূরত্বে থাকবে */
+        padding: 10px;
     }
 }
 
@@ -69,13 +70,13 @@ html, body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 20px;
+    padding: 8px 15px;
     border: none;
     background: #2a2a2a;
     color: var(--text-dim);
     cursor: pointer;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 13px;
     transition: 0.3s;
 }
 
@@ -92,7 +93,7 @@ html, body {
 
 .search-input {
     width: 100%;
-    height: 45px;
+    height: 42px;
     background: #252525;
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -110,6 +111,7 @@ html, body {
     padding: 10px;
 }
 
+/* ২. ফেভারিট বাটন ডান দিকে ফিক্স করা */
 .channel-card {
     display: flex;
     align-items: center;
@@ -118,13 +120,14 @@ html, body {
     margin-bottom: 10px;
     border-radius: 12px;
     cursor: pointer;
+    position: relative; /* পজিশন ঠিক রাখার জন্য */
 }
 
 .channel-card:active { transform: scale(0.98); }
 
 .channel-image {
-    width: 60px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
     margin-right: 15px;
     flex-shrink: 0;
 }
@@ -135,9 +138,17 @@ html, body {
     object-fit: contain;
 }
 
+.channel-info {
+    flex: 1; /* এটি তথ্যকে মাঝখানের পুরো জায়গা নিতে সাহায্য করবে */
+    min-width: 0;
+}
+
 .channel-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .channel-category {
@@ -145,12 +156,16 @@ html, body {
     color: var(--text-dim);
 }
 
+/* হার্ট বাটন একদম ডান দিকে থাকবে */
 .favorite-btn {
-    margin-left: auto;
     background: none;
     border: none;
     color: #444;
-    font-size: 18px;
+    font-size: 20px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    flex-shrink: 0; /* বাটন ছোট হয়ে যাবে না */
 }
 
 .favorite-btn.active { color: #ff4b4b; }
