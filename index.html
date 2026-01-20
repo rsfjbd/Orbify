@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html dir='ltr' lang='en-GB'>
+<head>
+    <meta charset='UTF-8'/>
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' name='viewport'/>
+    <title>Orbify M3U Player</title>
+    <link href='//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' rel='stylesheet'/>
+    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clappr-hlsjs-playback@latest/dist/clappr-hlsjs-playback.min.js"></script>
+    <link href='style.css' rel='stylesheet'/>
+</head>
+<body>
+
+<div class='main-content'>
+    <div class='player-container'>
+        <div class='video-container' id='videoPlayer'></div>
+    </div>
+    <div class='channel-section'>
+        <div class='channel-tabs'>
+            <button class='tab-btn active' id='allChannelsTab'><i class='fas fa-globe'></i> All</button>
+            <button class='tab-btn' id='categoriesTab'><i class='fas fa-list'></i> Categories</button>
+            <button class='tab-btn' id='favoritesTab'><i class='fas fa-heart'></i> Favorites</button>
+        </div>
+        <div class='search-container'>
+            <input class='search-input' id='searchInput' placeholder='Search channels...' type='text'/>
+        </div>
+        <div class='channel-grid' id='channelGrid'>
+            <div class='loading'></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getParam(sname) {
+    let params = new URLSearchParams(window.location.search);
+    return params.get(sname);
+}
+
+let sv = getParam("sv") || "";
+let channels = [];
+let categories = new Set();
+let favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
+let player;
+
+const channelGrid = document.getElementById('channelGrid');
+const searchInput = document.getElementById('searchInput');
+
+function createChannelCard(channel) {
+    const isFavorite = favorites.has(channel.url);
+    return `
+        <div class="channel-card" onclick="playChannel('${channel.url}')">
+            <div class="channel-image">
+                <img src="${channel.logo}" alt="${channel.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180'">
+            </div>
+            <div class="channel-info">
+                <div class="channel-name">${channel.title}</div>
+                <div class="channel-category">${channel.category}</div>
+            </div>
+            <div class="action-buttons">
+                <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
+                        onclick="toggleFavorite(event, '${channel.url}')">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+        </div>`;
+}
+
+function playChannel(url) {
+    if (player) { player.destroy(); }
+    player = new Clappr.Player({
+        source: url,
+        parentId: '#videoPlayer',
+        width: '100%',
+        height: '100%',
+        autoPlay: true,
+        plugins: [HlsjsPlayback],
+        playback: { hlsjsConfig: { enableWorker: true } },
+        poster: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEji3C6D6HZt-fLDTf1mYZQYIyeUP_VV8UT9jQS-pbEiJu2KVxUL3xdAqnXaKyO_kIICCWn-IWyuq0XevFLIGAqLmSFpdpZzfJKVOrgkmsB9rdoYmgto2wZRJuqHAkIhj9bS7rcVKen3LMLxwWa1ZD1E605gASpoo-wl628yDS0zyNvB3KxC1BfX4oEL/s1920/skviptv.png",
+    });
+}
+
+async function parseM3U(url) {
+    if(!url) {
+        channelGrid.innerHTML = '<div class="error-message">No M3U URL provided.</div>';
+        return;
+    }
+    try {
+        channelGrid.innerHTML = '<div class="loading"></div>';
+        const proxyUrl = 'https://corsproxy.io/?'; 
+        const response = await fetch(proxyUrl + encodeURIComponent(url));
+        const text = await response.text();
+        const lines = text.split('\n');
+        
+        channels = [];
+        categories.clear();
+        let currentChannel = {};
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const categoryMatch = line.match(/group-title="([^"]+)"/);
+                const category = categoryMatch ? categoryMatch[1] : 'Others';
+                const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                const logo = logoMatch ? logoMatch[1] : '';
+                const title = line.split(',')[1] || "Unknown Channel";
+                currentChannel = { title: title, category: category, logo: logo };
+                categories.add(category);
+            } else if (line.startsWith('http')) {
+                currentChannel.url = line;
+                if(currentChannel.title) channels.push(currentChannel);
+                currentChannel = {};
+            }
+        });
+        showAllChannels();
+    } catch (error) {
+        channelGrid.innerHTML = '<div class="error-message">Error loading channels.</div>';
+    }
+}
+
+function showAllChannels() {
+    channelGrid.innerHTML = channels.map(ch => createChannelCard(ch)).join('');
+}
+
+function showCategories() {
+    channelGrid.innerHTML = Array.from(categories).sort().map(cat => {
+        const count = channels.filter(ch => ch.category === cat).length;
+        return `<div class="channel-card" onclick="showChannelsByCategory('${cat}')">
+                    <div class="channel-info">
+                        <div class="channel-name">${cat}</div>
+                        <div class="channel-category">${count} Channels</div>
+                    </div>
+                </div>`;
+    }).join('');
+}
+
+function showChannelsByCategory(cat) {
+    const filtered = channels.filter(ch => ch.category === cat);
+    channelGrid.innerHTML = filtered.map(ch => createChannelCard(ch)).join('');
+}
+
+function showFavorites() {
+    const favs = channels.filter(ch => favorites.has(ch.url));
+    channelGrid.innerHTML = favs.length > 0 ? favs.map(ch => createChannelCard(ch)).join('') : '<div class="error-message">No favorites added</div>';
+}
+
+function toggleFavorite(event, url) {
+    event.preventDefault(); event.stopPropagation();
+    favorites.has(url) ? favorites.delete(url) : favorites.add(url);
+    localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)));
+    if(document.querySelector('.tab-btn.active').id === 'favoritesTab') showFavorites();
+}
+
+searchInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = channels.filter(ch => ch.title.toLowerCase().includes(term) || ch.category.toLowerCase().includes(term));
+    channelGrid.innerHTML = filtered.map(ch => createChannelCard(ch)).join('');
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if(btn.id === 'allChannelsTab') showAllChannels();
+        if(btn.id === 'categoriesTab') showCategories();
+        if(btn.id === 'favoritesTab') showFavorites();
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    if(sv) parseM3U(sv);
+});
+</script>
+</body>
+</html>
